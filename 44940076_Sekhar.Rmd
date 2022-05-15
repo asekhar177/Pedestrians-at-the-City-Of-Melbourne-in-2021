@@ -1,0 +1,333 @@
+---
+title: "Sekhar, Arjun (44940076) - Stat8123 Assignment 3"
+author: "Arjun Sekhar"
+date: "25/10/2021"
+output: pdf_document
+---
+
+## The data set
+
+```{r}
+setwd("~/OneDrive/Assessments/University/Year 4/Semester 2/Stat8123/Tutorials/Assignment 3")
+pedestrians_2021 <- read.csv("pedestrians_2021.csv", header = TRUE)
+
+library(pander)
+pander(head(pedestrians_2021, n=5))
+```
+
+## Question 1
+In this question we intend to analyse our time series plot of pedestrian counts in the inner city of Melbourne during January to September 2021.
+
+```{r}
+# Step 1: Import the 'ggplot2' and the 'dplyr' package.
+library(ggplot2)
+library(dplyr)
+
+# Step 2: Separate the date from being a string to separate values.
+pedestrians_2021$Date <- as.Date(pedestrians_2021$Date)
+
+# Step 3: Group, summarise the pedestrian information.
+ped_ts <- pedestrians_2021 %>% 
+  group_by(Date) %>% 
+  summarise(n=sum(Count))
+
+# Step 4: Plot the time series graph using 'geom_line()' to display the effect.
+ggplot(ped_ts, aes(x=Date, y=n)) + geom_line()
+```
+\
+From the plot itself, it is a time series plot which tells us the number of pedestrians in the inner city of Melbourne between January to September 2021.
+
+In this plot we can notice that during the early part of the year (say January and February), the daily pattern is fairly standard, albeit a little lower than usual. There was a drop in the population around March and then it picked up again in April, before it came down drastically from May to June - this tells us that Melbourne was potentially amidst another one of their lockdowns, which basically dropped the pedestrian population by around 25%. Eventually once the lockdowns ended, it soared back up.
+
+An interesting aspect to notice is that they had another lockdown around a month ago, but their pedestrian numbers in inner Melbourne was incredibly low, which aligned with the rise in COVID-19 cases in the state. There were protests happening but the numbers were no where enough to replicate the heights of the periods when there were no lockdowns.
+
+## Question 2
+This question involves us creating plots for the monthly and weekly counts on the pedestrians and we want to find which month had the largest pedestrian count, as well as whether there was a clear pattern in terms of the day of the week.
+
+### A)
+For the Monthly pattern, we can observe the following occur:
+
+```{r}
+# Step 1: Load the packages 'ggplot2' and 'lubridate'
+library(ggplot2)
+library(lubridate)
+
+# Step 2: Group the dates by creating another column named 'Date'.
+pedestrians_2021$Date <- as.Date(pedestrians_2021$Date)
+
+# Step 3: Analyse the pedestrian counts on the basis of the Month.
+ped_month <- pedestrians_2021 %>% 
+  mutate(monthDate = month(Date)) %>% 
+  group_by(monthDate) %>% 
+  summarise(n=sum(Count))
+
+# Step 3: Plot the bar graph.
+ggplot(ped_month, aes(x = monthDate, y = n)) + 
+  geom_bar(stat = "identity", fill = "red") +
+    scale_x_discrete(limits = month.abb)
+```
+\
+Observing this chart by eyeballing, we can see that the month with the largest pedestrian count was on the 4th month of the year, which is **April**. Some other popular months in this study were March, January and July - all of which were during the immediate aftermaths of a lockdown.
+
+### B) 
+We can now go forth in creating our *weekly* pedestrian count and subsequently we can go about analysing whether there is a clear day of the week pattern that is visible for the pedestrian count.
+
+```{r}
+# Step 1: Import the packages 'ggplot2' and 'lubridate'.
+library(ggplot2)
+library(lubridate)
+
+# Step 2: Although we have done this before, we group the date.
+pedestrians_2021$Date <- as.Date(pedestrians_2021$Date)
+
+# Step 3: Analyse the pedestrian count based on the days of the week.
+ped_days <- pedestrians_2021 %>% 
+  mutate(wday = wday(Date, label = TRUE)) %>%
+  group_by(wday) %>%
+  summarise(n=sum(Count))
+
+# Step 4: Plot the bar chart as follows.
+ggplot(ped_days, aes(x = wday, y = n)) + geom_bar(stat = "identity", fill = "red")
+```
+\
+This plot has a progressive day of the week pattern, which means that while Mondays are least popular (possibly due to the lack of motivation to move on a Monday morning), as the week wears on, the movement increases - going as far as peaking on a Saturday. The increase in movement could be matched with the level of enthusiasm among the citizens of Melbourne as the week progresses. More so, it goes to show that due to people being quite busy during early parts of the week, as it wears on, there is more of a movement that is happening. 
+
+## Question 3
+The alluvial plot here shall describe the traffic flow at the locations Melbourne Central, New Quay and Southbank and we aim to analyse it by the days of the week. Our main package shall be the *ggalluvial* package, which will generate our Alluvial plot.
+
+```{r}
+# Step 1: Input the 'ggalluvial' package
+library(ggalluvial)
+
+# Step 2: Mutate the date by rearranging it a little
+ped_2021 <- pedestrians_2021 %>% mutate(date = ymd(Date))
+ped_2021 <- ped_2021 %>% mutate(wday = wday(Date, label = TRUE))
+
+# Step 3: Pick out the 3 locations (Melbourne Central, New Quay and Southbank)
+ped_2021 <- ped_2021[ped_2021$Sensor %in% c("Melbourne Central","New Quay","Southbank"), ]
+
+# Step 4: Use the 'ggplot' package with the alluvium plot.
+ggplot(ped_2021, aes(y = Count, axis1 = Sensor, axis2 = wday)) + 
+  geom_alluvium(aes(fill = wday), width = 0, knot.pos = 0, reverse = FALSE) +   
+  guides(fill = FALSE) +
+  geom_stratum(width = 1/8, reverse = FALSE) +
+  geom_text(stat = "stratum", aes(label = after_stat(stratum)), reverse = FALSE) +
+  scale_x_continuous(breaks = 1:3, labels = c("Location", "Day", "Time")) +
+  ggtitle("Alluvial Plot")
+```
+\
+Describing our plot, we can see that our main variables to consider are the Location and Days (both in the x-axis), and then the Count (in the y-axis). Basically, the plot itself is a useful ranking tool for us to see which days that a particular location is popular. It thereby allows us to infer the pedestrian traffic flow.
+
+The following facts that can be inferred are that:
+
+* Southbank is a popular spot for pedestrians to walk through.
+
+* Sundays are understandably the least popular days for the pedestrians to cross, given there is little activity on Sundays. 
+
+* New Quay is a more popular destination during the weekends, potentially because it attracts visitors, given it is by the sea side.
+
+The above aspects prove important because they tell us the travel patterns of pedestrians, but also, given the frequency of COVID-19 lockdowns in Melbourne, the consistency of these visits could also be questionable.
+
+## Question 4
+Our aim here is to analyse hourly pedestrian counts during January and April 2021 at Southern Cross Station using a dumbbell plot. We adopt the following steps below to approach this.
+
+```{r, warning=FALSE, message=FALSE}
+# Step 1: Import the packages 'tidyr', 'dplyr', 'readr' and 'ggalt'.
+library(tidyr)
+library(dplyr)
+library(readr)
+library(ggalt)
+
+# Step 2: Mutate the 'Date' variable.
+ped_hour <- pedestrians_2021 %>% mutate(date = ymd(Date)) 
+
+# Step 3: Assign this mutation as a new column 'month'.
+ped_hour$month <- month(ped_hour$date)
+
+# Step 4: Filter out the hourly counts for Southern Cross Station
+hourly_counts <- filter(ped_hour, 
+                        Sensor == "Southern Cross Station",
+                        month %in% c(1, 4)) %>% select(Time, month, Count)
+
+# Step 5: Group these hourly counts by 'Time' and 'month'
+hourly_counts <- hourly_counts %>%
+  group_by(Time, month) %>%
+  summarise(n = sum(Count))
+
+# Step 6: Pivot the hourly counts on the basis of the months.
+pivot <- pivot_wider(hourly_counts, names_from = month, values_from = n)
+names(pivot) <- c("hour", "Jan", "Apr")
+
+# Step 7: Plot the dumbbell ggplot.
+ggplot(pivot, aes(y = hour, x = Jan, xend = Apr)) + 
+  geom_dumbbell(size = 1.2, size_x = 3, size_xend = 3, colour = "grey",
+                colour_x = "red", colour_xend = "black") + 
+  theme_minimal() +
+  labs(title = "Hourly Counts in Jan and Apr 2021 at Southern Cross Station", 
+       x = "Pedestrian Count", y = "Hours")
+```
+\
+The above plot displays a span of the pedestrian count across the 24 hours of the day. As expected, we can see that during the timings late at night and the early morning the spread of the dumbbells is rather small, which is definitely an unsurprising result. In contrast though as we go from 08:00 to 17:00, there is a definitive activity. The activity is rather slow during the day because people would be working and so have less time to stroll around.
+
+## Question 5
+Firstly, we take the boxplot to compare the monthly pattern of the pedestrian counts and from that, the following can be noted.
+
+```{r}
+# Step 1: Load the packages 'ggplot2', 'lubridate' and 'modelr'.
+library(ggplot2)
+library(lubridate)
+library(modelr)
+
+# Step 2: Analyse the pedestrian counts on the basis of the month.
+ped_month <- pedestrians_2021 %>% 
+  mutate(monthDate = ymd(Date)) %>%
+  group_by(monthDate) %>% 
+  summarise(n=sum(Count)) %>%
+  mutate(month = month(monthDate, label = TRUE))
+
+# Step 3: Plot the boxplot for the months.
+ggplot(ped_month, aes(x = month, y = n)) + 
+  geom_boxplot() +
+  ggtitle("Boxplot of the monthly pattern of pedestrian counts") + 
+  ylab("Count of Pedestrians Flowing") +
+  xlab("Months of 2021")
+```
+\
+We can see here that early in the year (January and February), the spread of the pedestrian count is minimal and we can see that the median of the pedestrian flow was fairly similar. There was then an increase in the median and a moderate spread in the box-and-whisker of the March and April months but this was before a sharp drop in May.
+
+The drop in May was arguably due to another lockdown that occurred in that period, which deeply hit the confidence of pedestrians to travel actively along inner Melbourne. Subsequently in June and July once that lockdown ended, there was a wide-spread in the pedestrian flow of June and July - possibly signalling the joy of the post-lockdown freedoms.
+
+Unfortunately the increase of cases in the Delta strain resulted in August having a stunning decline and by September the citizens of Melbourne were hit with yet another lockdown, which effectively carried over till the conclusion of this study.
+
+```{r}
+linear_mod <- lm(n ~ month - 1, data = ped_month)
+summary(linear_mod)
+```
+\
+Above we have fitted a linear model to depict the monthly pedestrian counts and we can see that the variables signify the following:
+
+$\widehat{Count_i} = 386700(Jan_i)+342186(Feb_i)+470807(Mar_i)+559024(Apr_i)+293846(May_i)+324457(Jun_i)+372809(Jul_i)+199136(Aug_i)+186721(Sep_i)$
+
+* $Count_i =$ Number of Pedestrians that pass all through Melbourne
+
+* $Jan_i =$ Month of January
+
+* $Feb_i =$ Month of February
+
+* $Apr_i =$ Month of April
+
+* $May_i =$ Month of May
+
+* $Jun_i =$ Month of June
+
+* $Jul_i =$ Month of July
+
+* $Aug_i =$ Month of August
+
+* $Sep_i =$ Month of September
+
+```{r}
+# Step 1: Indicate the residuals by taking the 'modelr' package.
+library(modelr)
+
+# Step 2: Filter out the residuals from our linear model.
+ped_month <- ped_month %>% add_residuals(linear_mod)
+
+# Step 3: Plot the residuals by also adding a loess curve.
+ped_month %>% 
+  ggplot(aes(monthDate, resid)) + 
+  geom_ref_line(h=0) +
+  geom_line() +
+  ggtitle("Residual Plot for Monthly Pedestrian Counts") + 
+  xlab("Month") +
+  ylab("Residuals") +
+  geom_smooth(method = "loess", se = FALSE, span = 0.2)
+```
+\
+Analysing this residual plot, we can still see that the plot itself aligns with what we noticed in the earlier analysis of the respective months aligning with the lockdown times. It goes to show that months where there were lockdowns (i.e. an inactivity), the residual diminishes drastically. For example, months such as June and September were highly inactive unlike April and July, which peaked in pedestrian activity. This in summary tells us that the model has performed in consistency with the ground reality.
+
+## Question 6
+
+```{r}
+# Step 1: Filter out the 10 dates where linear_mod fails 
+ped_filter <- ped_month %>% 
+  slice_max(n = 10, abs(resid))
+
+# Step 2: Display the data
+library(pander)
+pander(ped_filter)
+```
+\
+Based on my knowledge about Melbourne, we can see that the residual values that have been filtered are mostly from July, as well as February and June. The interesting aspect of this is that most of these values are from periods that COVID-19 cases were low in Melbourne (and Victoria) and lockdowns did not occur. Right after these periods was when cases rose and restrictions were tightened, signifying that there was a sharp change in the flow of pedestrians.
+
+Possible reasons for the misfit itself would be because the data was not standardised and that a transformation (particularly of the response variable) would have been useful. This passively tells us to consider model transformations of variables, as well as to consider alternative distributions as well.
+
+A linear model is not quite the best choice for this kind of data because it is not completely standardised and besides we need to worry about the distribution of the data. The data as a linear model was not tested in those ways, which meant that the cleanliness of the model was not quite substantial.
+
+## Question 7
+
+**Research Question:** Develop a linear model to describe the monthly pattern of pedestrians in Southbank. 
+
+*Approach:* 
+Firstly we shall establish our model for Southbank, wherein we use the *Date* (as a function of the months) and *Count* variables to express this relationship.
+
+```{r}
+# Step 1: Filtering out the 'Southbank' data in a frame.
+Southbank <- pedestrians_2021[pedestrians_2021$Sensor %in% c("Southbank"), ]
+
+# Step 2: Expressing this as a linear model
+Southbank_lm <- lm(Count ~ months(Date)-1, data = Southbank)
+summary(Southbank_lm)
+```
+
+We can see from the above that March is missing, which is rather unusual given we are trying to model it across the 9 months. In saying that, we can also note that the model picks out the month of *April* as the contrast month (which is can be viewed like an intercept). This means that the model itself can be expressed as follows
+
+$\widehat{Count_i} = 623.3(Jan_i)+550.2(Feb_i)+1087.4(April_i)+386.4(May_i)+591.9(Jun_i)+671.2(Jul_i)+386.4(Aug_i)+387.5(Sep_i)$
+
+Where (once again):
+
+* $Count_i =$ Number of Pedestrians that pass through Southbank
+
+* $Jan_i =$ Month of January
+
+* $Feb_i =$ Month of February
+
+* $Apr_i =$ Month of April
+
+* $May_i =$ Month of May
+
+* $Jun_i =$ Month of June
+
+* $Jul_i =$ Month of July
+
+* $Aug_i =$ Month of August
+
+* $Sep_i =$ Month of September
+
+We can now tidy up our model output through the process of using the *broom* package. It can be displayed and expressed as follows:
+
+```{r}
+library(broom)
+library(pander)
+pander(tidy(Southbank_lm), caption = "Coefficients for Southbank")
+```
+
+Now analysing the model diagnostics, we can see the following:
+
+```{r}
+# We choose 'ggfortify' to plot our residuals using a ggplot technique. 
+library(ggfortify)
+autoplot(Southbank_lm, which = 1:4, label.size = 3)
+```
+
+Analysing each of these plots, we can see the following:
+
+* **Residuals vs. Fitted:** There is not much of a random scatter around 0, due to there being an observable pattern and no constant variance. We can also notice some values standing out (it is premature in this study to call them outliers), but they are highly negligible.
+
+* **Normal Q-Q Plot:** There is a clear departure from normality that can be noticed along the top-right and the bottom-left of the plot. This is a sign that the model can be better improved if further analysed.
+
+* **Scale Location:** From this plot, while there is approximately a constant variance about 1 the smoothing line does not depict this quite as much because it indicates the variance ranging between 0.75 and 1.00 (it is approaching 1.00).
+
+* **Cook's Distance:** As spotted in the Residuals vs. Fitted plot, we could see that there were some values that stood out, but the Cook's Distance tells us that they are not quite large (usually these need to be greater than 1). It means that we can conclude that the Cook's Distance reveals no substantial outliers.
+
+We can overall see that while the above model is an average model for the sake of the study, it could be improved by fitting another distribution as a generalised linear model (GLM). It could be noted that certain diagnostics were not met, which is not a deterrant to choosing the model altogether but in a further study it would be beneficial to tame the model. 
